@@ -107,7 +107,7 @@ class UserTest extends TestCase
         ]);
         $token = json_decode($tokenResponse -> content(),true);
         $response = $this->get('/api/logout',
-            [ "Authorization" => "Bearer " . $token ['access_token']]
+            [ "Authorization" => "Bearer " . $token ['access_token']],
         );
         $response->assertStatus(200);
         $response->assertJsonFragment(
