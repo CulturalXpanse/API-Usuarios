@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Http\Request;
+use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Ciudad;
 use App\Models\Perfil;
+use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
@@ -77,12 +79,17 @@ class UserController extends Controller
         if ($usuario) {
 
             $perfil = $usuario->perfil;
+
+            $ciudad = $perfil->ciudad;
     
             return response()->json([
                 'name' => $usuario->name,
                 'nombre_completo' => $perfil->nombre_completo,
-                'ciudad' => $perfil->ciudad_id,
-                'biografia' => $perfil->biografia
+                'ciudad' => $ciudad ? $ciudad->nombre : 'Ubicación Desconocida', // Nombre de la ciudad
+                'pais' => $ciudad ? $ciudad->pais->nombre : 'Ubicación Desconocida', // Nombre del país
+                'fecha_nacimiento' => $perfil->fecha_nacimiento ? Carbon::parse($perfil->fecha_nacimiento)->format('d/m/Y') : null,
+                'biografia' => $perfil->biografia ?: 'Sin biografía',
+                'foto_perfil' => $perfil->foto_perfil
             ], 200);
         }
     
@@ -106,16 +113,54 @@ class UserController extends Controller
 
     public function actualizar(Request $request)
     {
+
         $request->validate([
-            'nombre_completo' => 'string|max:255',
+            'name' => 'string|max:255|unique:users,name,' . auth()->id(),
+            'nombre_completo' => 'string|max:255|nullable',
+            'fecha_nacimiento' => 'date|nullable',
+            'biografia' => 'string|nullable',
+            'ciudad' => 'nullable|exists:ciudades,id',
+            'foto_perfil' => 'image|nullable|max:2048'
         ]);
-
+    
         $usuario = auth()->user();
-
         $perfil = Perfil::where('user_id', $usuario->id)->firstOrFail();
-        $perfil->nombre_completo = $request->input('nombre_completo');
-        $perfil->save();
+    
 
+        if ($request->filled('name')) {
+            $usuario->name = $request->input('name');
+        }
+    
+        if ($request->filled('nombre_completo')) {
+            $perfil->nombre_completo = $request->input('nombre_completo');
+        }
+    
+        if ($request->filled('fecha_nacimiento')) {
+            $perfil->fecha_nacimiento = $request->input('fecha_nacimiento');
+        }
+    
+        if ($request->filled('biografia')) {
+            $perfil->biografia = $request->input('biografia');
+        }
+
+        if ($request->filled('ciudad')) {
+            $perfil->ciudad_id = $request->input('ciudad');
+        }
+
+        if ($request->hasFile('foto_perfil')) {
+            $file = $request->file('foto_perfil');
+            $fileName = Str::random(50) . '.' . $file->getClientOriginalExtension();
+            $destinationPath = 'imagenes/perfiles';
+            $file->move($destinationPath, $fileName);
+    
+            $perfil->foto_perfil = $fileName;
+        }
+    
+        $usuario->save();
+        $perfil->save();
+    
         return response()->json(['message' => 'Perfil actualizado exitosamente'], 200);
     }
+    
+
 }

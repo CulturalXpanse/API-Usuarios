@@ -22,4 +22,9 @@ class Perfil extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function ciudad()
+    {
+        return $this->belongsTo(Ciudad::class, 'ciudad_id');
+    }
 }
