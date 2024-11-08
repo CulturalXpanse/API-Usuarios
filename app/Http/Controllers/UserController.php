@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Ciudad;
 use App\Models\Perfil;
+use App\Models\Seguidor;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -83,10 +84,11 @@ class UserController extends Controller
             $ciudad = $perfil->ciudad;
     
             return response()->json([
+                'id' => $usuario->id,
                 'name' => $usuario->name,
                 'nombre_completo' => $perfil->nombre_completo,
-                'ciudad' => $ciudad ? $ciudad->nombre : 'Ubicación Desconocida', // Nombre de la ciudad
-                'pais' => $ciudad ? $ciudad->pais->nombre : 'Ubicación Desconocida', // Nombre del país
+                'ciudad' => $ciudad ? $ciudad->nombre : 'Ubicación Desconocida',
+                'pais' => $ciudad ? $ciudad->pais->nombre : 'Ubicación Desconocida',
                 'fecha_nacimiento' => $perfil->fecha_nacimiento ? Carbon::parse($perfil->fecha_nacimiento)->format('d/m/Y') : null,
                 'biografia' => $perfil->biografia ?: 'Sin biografía',
                 'foto_perfil' => $perfil->foto_perfil
@@ -96,6 +98,19 @@ class UserController extends Controller
         return response()->json(['error' => 'No autenticado'], 401);
     }
     
+    public function obtenerUsuarioPorId($id) {
+        $usuario = User::find($id);
+        
+        if ($usuario) {
+            $perfil = $usuario->perfil;
+            return response()->json([
+                'name' => $usuario->name,
+                'foto_perfil' => $perfil ? $perfil->foto_perfil : 'default-profile.png'
+            ], 200);
+        }
+    
+        return response()->json(['error' => 'Usuario no encontrado'], 404);
+    }
 
     public function obtenerCiudades() {
         try {
@@ -163,4 +178,31 @@ class UserController extends Controller
     }
     
 
+    public function seguir($seguidorId, $seguidoId) {
+    if ($seguidorId == $seguidoId) {
+        return response()->json(['error' => 'No puedes seguirte a ti mismo.'], 400);
+    }
+
+    $seguidor = User::find($seguidorId);
+    $seguido = User::find($seguidoId);
+
+    if (!$seguidor || !$seguido) {
+        return response()->json(['error' => 'Uno o ambos usuarios no existen.'], 404);
+    }
+
+    $existe = Seguidor::where('seguidor_id', $seguidorId)
+                      ->where('seguido_id', $seguidoId)
+                      ->exists();
+
+    if ($existe) {
+        return response()->json(['message' => 'Ya sigues a este usuario.'], 400);
+    }
+
+    Seguidor::create([
+        'seguidor_id' => $seguidorId,
+        'seguido_id' => $seguidoId,
+    ]);
+
+    return response()->json(['message' => 'Ahora sigues a este usuario.'], 201);
+    }
 }
