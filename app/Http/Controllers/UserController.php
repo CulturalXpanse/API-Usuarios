@@ -97,6 +97,30 @@ class UserController extends Controller
     
         return response()->json(['error' => 'No autenticado'], 401);
     }
+
+    public function obtenerPerfilCompletoPorID($id)
+    {
+        $usuario = User::find($id);
+    
+        if ($usuario) {
+
+            $perfil = $usuario->perfil;
+            $ciudad = $perfil->ciudad;
+    
+            return response()->json([
+                'id' => $usuario->id,
+                'name' => $usuario->name,
+                'nombre_completo' => $perfil->nombre_completo,
+                'ciudad' => $ciudad ? $ciudad->nombre : 'Ubicación Desconocida',
+                'pais' => $ciudad ? $ciudad->pais->nombre : 'Ubicación Desconocida',
+                'fecha_nacimiento' => $perfil->fecha_nacimiento ? Carbon::parse($perfil->fecha_nacimiento)->format('d/m/Y') : null,
+                'biografia' => $perfil->biografia ?: 'Sin biografía',
+                'foto_perfil' => $perfil->foto_perfil
+            ], 200);
+        }
+    
+        return response()->json(['error' => 'Usuario no encontrado'], 404);
+    }
     
     public function obtenerUsuarioPorId($id) {
         $usuario = User::find($id);
@@ -121,7 +145,7 @@ class UserController extends Controller
         }
     }
 
-    public function show($id) {
+    public function mostrarPais($id) {
         $ciudad = Ciudad::with('pais')->find($id);
         return response()->json($ciudad);
     }
@@ -191,8 +215,8 @@ class UserController extends Controller
     }
 
     $existe = Seguidor::where('seguidor_id', $seguidorId)
-                      ->where('seguido_id', $seguidoId)
-                      ->exists();
+                        ->where('seguido_id', $seguidoId)
+                        ->exists();
 
     if ($existe) {
         return response()->json(['message' => 'Ya sigues a este usuario.'], 400);
@@ -204,5 +228,25 @@ class UserController extends Controller
     ]);
 
     return response()->json(['message' => 'Ahora sigues a este usuario.'], 201);
+    }
+
+    public function obtenerAmigos($usuarioId) {
+        $amigos = DB::table('seguidores')
+            ->join('users', 'seguidores.seguido_id', '=', 'users.id')
+            ->join('perfiles', 'perfiles.user_id', '=', 'users.id')
+            ->select('users.id', 'users.name', 'perfiles.foto_perfil')
+            ->where('seguidores.seguidor_id', $usuarioId)
+            ->get();
+    
+        return response()->json($amigos);
+    }
+
+    public function verificarAmistad($userId, $profileId) {
+        $sonAmigos = DB::table('seguidores')
+                        ->where('seguidor_id', $userId)
+                        ->where('seguido_id', $profileId)
+                        ->exists();
+
+        return response()->json(['sonAmigos' => $sonAmigos]);
     }
 }
