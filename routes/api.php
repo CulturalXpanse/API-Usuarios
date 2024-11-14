@@ -15,3 +15,4 @@ Route::get('/perfil/{id}', [UserController::class, 'obtenerPerfilCompletoPorID']
 Route::post('/seguir/{seguidorId}/{seguidoId}', [UserController::class, 'seguir']);
 Route::get('/usuarios/{id}/amigos', [UserController::class, 'obtenerAmigos']);
 Route::get('/verificar-amistad/{userId}/{profileId}', [UserController::class, 'verificarAmistad']);
+Route::delete('/dejar-de-seguir/{seguidorId}/{seguidoId}', [UserController::class, 'dejarDeSeguir']);

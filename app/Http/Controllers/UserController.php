@@ -230,6 +230,31 @@ class UserController extends Controller
     return response()->json(['message' => 'Ahora sigues a este usuario.'], 201);
     }
 
+    public function dejarDeSeguir($seguidorId, $seguidoId) {
+        if ($seguidorId == $seguidoId) {
+            return response()->json(['error' => 'No puedes dejar de seguirte a ti mismo.'], 400);
+        }
+    
+        $seguidor = User::find($seguidorId);
+        $seguido = User::find($seguidoId);
+    
+        if (!$seguidor || !$seguido) {
+            return response()->json(['error' => 'Uno o ambos usuarios no existen.'], 404);
+        }
+    
+        $seguimiento = Seguidor::where('seguidor_id', $seguidorId)
+                                ->where('seguido_id', $seguidoId)
+                                ->first();
+    
+        if (!$seguimiento) {
+            return response()->json(['message' => 'No sigues a este usuario.'], 400);
+        }
+    
+        $seguimiento->delete();
+    
+        return response()->json(['message' => 'Has dejado de seguir a este usuario.'], 200);
+    }
+
     public function obtenerAmigos($usuarioId) {
         $amigos = DB::table('seguidores')
             ->join('users', 'seguidores.seguido_id', '=', 'users.id')
