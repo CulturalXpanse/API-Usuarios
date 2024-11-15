@@ -1,13 +1,13 @@
-FROM php:8.0
-
-RUN mkdir /app
+FROM ggmartinez/laravel:php-82
 
 WORKDIR /app
 
-EXPOSE 80
+COPY . .
 
-COPY . /app
+RUN composer install --no-dev --optimize-autoloader
 
-RUN composer install
+RUN chmod -R 775 /app/storage /app/bootstrap/cache
 
-CMD ["apache2-foreground"]
+EXPOSE 9000
+
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=9000"]

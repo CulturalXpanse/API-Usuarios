@@ -201,7 +201,6 @@ class UserController extends Controller
         return response()->json(['message' => 'Perfil actualizado exitosamente'], 200);
     }
     
-
     public function seguir($seguidorId, $seguidoId) {
     if ($seguidorId == $seguidoId) {
         return response()->json(['error' => 'No puedes seguirte a ti mismo.'], 400);
