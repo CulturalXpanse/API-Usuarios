@@ -273,4 +273,14 @@ class UserController extends Controller
 
         return response()->json(['sonAmigos' => $sonAmigos]);
     }
+
+    public function buscarUsuarios()
+    {
+        $usuarios = DB::table('users')
+            ->join('perfiles', 'users.id', '=', 'perfiles.user_id')
+            ->select( 'users.id', 'users.name AS nombre_usuario', 'perfiles.foto_perfil')
+            ->get();
+
+        return response()->json($usuarios);
+    }
 }
